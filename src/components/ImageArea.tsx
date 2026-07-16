@@ -33,13 +33,13 @@ export default function ImageArea({ pan, setPan, setScale, image, svgRef, polygo
     }, [image, scale, pan]);
 
   useEffect(() => {
-      const handleKeyDown = (e) => {
+      const handleKeyDown = (e:any) => {
         if (e.code === 'Space') {
           e.preventDefault();
           setToolMode('pan');
         }
       };
-      const handleKeyUp = (e) => {
+      const handleKeyUp = (e:any) => {
         if (e.code === 'Space') {
           setToolMode('draw');
         }
@@ -52,7 +52,7 @@ export default function ImageArea({ pan, setPan, setScale, image, svgRef, polygo
       };
     }, []);
 
-  const handleWheel = (e) => {
+  const handleWheel = (e:any) => {
       if (!image || !svgRef.current) return;
       e.preventDefault();
 
@@ -76,7 +76,7 @@ export default function ImageArea({ pan, setPan, setScale, image, svgRef, polygo
       setPan({ x: nextPanX, y: nextPanY });
     };
 
-  const handleMouseDown = (e) => {
+  const handleMouseDown = (e:any) => {
       if (!image) return;
 
       if (toolMode === 'pan' || e.button === 1 || e.button === 2) {
@@ -87,7 +87,7 @@ export default function ImageArea({ pan, setPan, setScale, image, svgRef, polygo
       }
     };
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove = (e:any) => {
       if (isDragging) {
         setPan({
           x: e.clientX - dragStart.x,
@@ -96,7 +96,7 @@ export default function ImageArea({ pan, setPan, setScale, image, svgRef, polygo
       }
     };
 
-  const handleMouseUp = (e) => {
+  const handleMouseUp = (e:any) => {
       if (isDragging) {
         setIsDragging(false);
         return;
@@ -112,7 +112,7 @@ export default function ImageArea({ pan, setPan, setScale, image, svgRef, polygo
         // Inverse calculations to map click to native pixel coordinates
         const x = Math.round((clientX - pan.x) / scale);
         const y = Math.round((clientY - pan.y) / scale);
-
+        //@ts-expect-error
         setCurrentPoints((prevPoints) => [...prevPoints, { x, y }]);
       }
     };
@@ -140,6 +140,7 @@ export default function ImageArea({ pan, setPan, setScale, image, svgRef, polygo
                         {polygons.map((poly) => (
                           <g key={poly.id}>
                             <polygon
+                              //@ts-expect-error
                               points={formatPoints(poly.points)}
                               fill="rgba(59, 130, 246, 0.35)"
                               stroke="#2563eb"
@@ -159,7 +160,8 @@ export default function ImageArea({ pan, setPan, setScale, image, svgRef, polygo
 
                         {/* Render Current In-Progress Lines */}
                         {currentPoints.length > 0 && (
-                          <polyline
+                <polyline
+                  //@ts-expect-error
                             points={formatPoints(currentPoints)}
                             fill="none"
                             stroke="#ef4444"
