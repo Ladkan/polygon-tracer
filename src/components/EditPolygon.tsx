@@ -14,6 +14,15 @@ export default function EditPolygon({activePolygonData,setActivePoly,updatePolyg
   return (
     <div className="h-screen bg-[#1b1b1c] flex flex-col z-20 overflow-hidden border-l border-[#1b1b1c] w-80">
 
+      <div className="absolute top-0 right-0 p-3">
+        <button
+          onClick={() => setActivePoly(undefined)}
+          className="text-[#c1c6d7] cursor-pointer hover:text-[#4ae176] transition-colors"
+        >
+          <span className="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+
       <div className="p-3 border-b border-[#414755]">
         <div className="font-semibold leading-4 tracking-wider text-[11px] text-[#c1c6d7] mb-4">Properties</div>
         <div className="space-y-4">
