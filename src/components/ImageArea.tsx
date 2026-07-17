@@ -204,7 +204,7 @@ export default function ImageArea({ setActivePoly, pan, setPan, setScale, image,
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10">
                       <div className="max-w-md bg-[#1b1b1c] border border-[#1b1b1c] p-8 rounded-2xl shadow-2xl">
-                        <h1 className="text-2xl font-black mb-3 text-white tracking-wide">Image Polygon Annotator</h1>
+                        <h1 className="text-2xl font-black mb-3 text-white tracking-wide">Image Polygon Tracer</h1>
                         <p className="text-gray-400 text-sm mb-6 leading-relaxed">
                           Upload any high-res image. Drag to pan, scroll wheel to zoom, and click to draw pixel-perfect polygons.
                         </p>
