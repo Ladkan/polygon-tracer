@@ -2,64 +2,92 @@
 interface SavedPolygonsProps{
   handleImageUpload: (e: any) => void;
   deletePolygon: (e: any) => void;
-  copyJSON: (e: any) => void;
-  copyCSS: (e: any) => void;
-  copySVG: (e: any) => void;
+  savePolygon: (e: any) => void;
+  setCurrentPoints: (e: any) => void;
+  setPolyName: (e: any) => void;
+  setActivePoly: React.Dispatch<React.SetStateAction<number | undefined>>;
   polygons: any[];
+  currentPoints: any[];
+  polyName: any;
+  activePoly: any;
 }
 
-export default function SavedPolygons({copyCSS,copyJSON,copySVG,deletePolygon,handleImageUpload,polygons}: SavedPolygonsProps) {
+export default function SavedPolygons({setActivePoly,activePoly,deletePolygon,handleImageUpload,polygons,currentPoints,savePolygon,setCurrentPoints,setPolyName,polyName}: SavedPolygonsProps) {
+
   return (
-  <div className="absolute top-6 right-6 bottom-6 w-80 bg-gray-900/95 backdrop-blur-md rounded-xl border border-gray-800 shadow-2xl flex flex-col z-20 overflow-hidden">
-              <div className="p-4 border-b border-gray-800 flex justify-between items-center">
-                <h2 className="font-bold text-sm tracking-widest uppercase text-gray-300">Saved Polygons</h2>
-                <label className="text-xs bg-gray-800 hover:bg-gray-700 text-white px-2 py-1 rounded cursor-pointer transition-colors">
-                  New Image
-                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                </label>
-              </div>
+    <div className="w-80 h-screen bg-[#1b1b1c] flex flex-col z-20 overflow-hidden border-r border-[#1b1b1c]">
 
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {polygons.length === 0 ? (
-                  <p className="text-gray-500 text-xs text-center mt-8">No polygons saved yet.</p>
-                ) : (
-                  polygons.map((poly) => (
-                    <div key={poly.id} className="p-3 bg-gray-950 rounded-lg border border-gray-850 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="font-semibold text-xs text-white truncate max-w-[150px]">
-                          {poly.name}
-                        </span>
-                        <button
-                          onClick={() => deletePolygon(poly.id)}
-                          className="text-xs text-red-500 hover:text-red-400 font-bold px-2 py-0.5 cursor-pointer"
-                        >
-                          Delete
-                        </button>
-                      </div>
+      <div className="border-b border-[#414755] p-3">
+        <label
+          className="cursor-pointer w-full py-2 bg-[#353535] text-[#e5e2e1] border border-[#414755] rounded flex items-center justify-center gap-2 hover:bg-[#393939] transition-all"
+        >
+          <span className="material-symbols-outlined text-[18px]">cloud_upload</span>
+          <span className="font-semibold leading-4 tracking-wider text-[11px]">Upload image</span>
+            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+        </label>
+      </div>
 
-                      <div className="grid grid-cols-3 gap-1.5 pt-1">
-                        <button
-                          onClick={() => copyJSON(poly.points)}
-                          className="text-[10px] py-1 bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-300 rounded font-bold cursor-pointer"
-                        >
-                          JSON
-                        </button>
-                        <button
-                          onClick={() => copyCSS(poly.points)}
-                          className="text-[10px] py-1 bg-blue-950/40 hover:bg-blue-950/80 border border-blue-900/50 text-blue-300 rounded font-bold cursor-pointer"
-                        >
-                          CSS
-                        </button>
-                        <button
-                          onClick={() => copySVG(poly.points)}
-                          className="text-[10px] py-1 bg-green-950/40 hover:bg-green-950/80 border border-green-900/50 text-green-300 rounded font-bold cursor-pointer"
-                        >
-                          SVG
-                        </button>
-                      </div>
+      <div className="flex flex-col overflow-y-auto">
+        <div className="px-3 py-2 flex items-center justify-between">
+          <span className="font-semibold leading-4 tracking-wider text-[11px] text-[#c1c6d7]">Polygons ({polygons.length})</span>
+        </div>
+        <div className="space-y-0.5">
+          {polygons.length === 0 ? (
+            <p className="font-semibold leading-4 tracking-wider text-[11px] text-[#c1c6d7] text-center">No polygons saved yet.</p>
+          ): (
+              polygons.map((poly) => (
+                <div
+                  onClick={() => setActivePoly(poly.id)}
+                  key={poly.id}
+                  className="px-3 py-2 border-l-4 flex items-center justify-between group cursor-pointer"
+                  style={{
+                    borderColor: poly.color,
+                    backgroundColor: activePoly === poly.id ? `${poly.color}1a` : "transparent"
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full" style={{backgroundColor: poly.color}}></div>
+                    <div>
+                      <p className="text-[#e5e2e1]">{poly.name}</p>
+                      <p className="font-normal leading-4 text-[12px] text-[#c1c6d7]">{poly.points.length} Points</p>
                     </div>
-                  ))
-                )}
+                  </div>
+                  <button onClick={() => deletePolygon(poly.id)} className="flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 text-[#c1c6d7] p-1 hover:bg-[#93000a] hover:text-[#ffdad6] rounded transition-all">
+                  <span className="material-symbols-outlined text-[18px]">delete</span>
+                  </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      <div className="mt-auto border-t border-[#414755] p-2 space-y-1">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={polyName}
+            onChange={(e) => setPolyName(e.target.value)}
+            placeholder="Polygon Name"
+            className="flex-1 w-full h-8 bg-[#202020] text-[#e5e2e1] border border-[#414755] rounded px-2 focus:ring-1 focus:ring-[#4ae176] focus:border-[#4ae176] outline-none transition-all"
+          />
+          <button
+            onClick={savePolygon}
+            className="bg-[#4ae176] hover:opacity-90 text-[#003915] font-bold px-4 rounded text-xs transition-colors shrink-0 cursor-pointer"
+          >
+            Save
+          </button>
+        </div>
+        <div className="flex justify-between items-center gap-2">
+          <span className="text-xs text-gray-400">
+            Current Points: <strong className="text-white">{currentPoints.length}</strong>
+          </span>
+          <button
+            onClick={() => setCurrentPoints([])}
+            className="text-xs text-[#ffb4ab] transition-colors cursor-pointer"
+          >
+            Clear Working Points
+          </button>
+        </div>
       </div>
   </div>
   )

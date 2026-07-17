@@ -1,26 +1,35 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import type { Point2D } from "../types/polygon.t";
 
 interface ImageAreaProps{
   image: any;
   svgRef: any;
   polygons: any[];
   handleImageUpload: (e: any) => void;
-  setCurrentPoints: (e: any) => void;
+  setCurrentPoints: React.Dispatch<React.SetStateAction<Point2D[]>>;
   naturalSize: any;
-  formatPoints: (e: string) => void;
-  currentPoints: any[];
+  formatPoints: (e: Point2D[]) => string | undefined;
+  currentPoints: Point2D[];
   scale: any;
-  toolMode: any;
+  toolMode: string;
   setToolMode: (e: any) => void;
   setScale: (e: any) => void;
   pan: any;
   setPan: (e: any) => void;
+  setActivePoly: (e: number) => void;
 }
 
-export default function ImageArea({ pan, setPan, setScale, image, svgRef, polygons, handleImageUpload, setCurrentPoints, naturalSize, formatPoints, currentPoints, scale, setToolMode, toolMode }: ImageAreaProps) {
+export default function ImageArea({ setActivePoly, pan, setPan, setScale, image, svgRef, polygons, handleImageUpload, setCurrentPoints, naturalSize, formatPoints, currentPoints, scale, setToolMode, toolMode }: ImageAreaProps) {
 
     const [isDragging, setIsDragging] = useState(false);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+    const lastToolRef = useRef<string | null>(null);
+  const currentToolRef = useRef(toolMode);
+
+  useEffect(() => {
+      currentToolRef.current = toolMode;
+    }, [toolMode]);
 
   useEffect(() => {
       const svgEl = svgRef.current;
@@ -33,15 +42,22 @@ export default function ImageArea({ pan, setPan, setScale, image, svgRef, polygo
     }, [image, scale, pan]);
 
   useEffect(() => {
-      const handleKeyDown = (e:any) => {
+      const handleKeyDown = (e:KeyboardEvent) => {
         if (e.code === 'Space') {
           e.preventDefault();
-          setToolMode('pan');
+
+          if (currentToolRef.current !== "pan") {
+            lastToolRef.current = currentToolRef.current
+            setToolMode("pan")
+          }
         }
       };
-      const handleKeyUp = (e:any) => {
+      const handleKeyUp = (e:KeyboardEvent) => {
         if (e.code === 'Space') {
-          setToolMode('draw');
+          if (lastToolRef.current !== null) {
+            setToolMode(lastToolRef.current)
+            lastToolRef.current = null
+          }
         }
       };
       window.addEventListener('keydown', handleKeyDown);
@@ -50,7 +66,7 @@ export default function ImageArea({ pan, setPan, setScale, image, svgRef, polygo
         window.removeEventListener('keydown', handleKeyDown);
         window.removeEventListener('keyup', handleKeyUp);
       };
-    }, []);
+    }, [setToolMode]);
 
   const handleWheel = (e:any) => {
       if (!image || !svgRef.current) return;
@@ -76,7 +92,7 @@ export default function ImageArea({ pan, setPan, setScale, image, svgRef, polygo
       setPan({ x: nextPanX, y: nextPanY });
     };
 
-  const handleMouseDown = (e:any) => {
+  const handleMouseDown = (e:React.MouseEvent<SVGSVGElement>) => {
       if (!image) return;
 
       if (toolMode === 'pan' || e.button === 1 || e.button === 2) {
@@ -87,7 +103,7 @@ export default function ImageArea({ pan, setPan, setScale, image, svgRef, polygo
       }
     };
 
-  const handleMouseMove = (e:any) => {
+  const handleMouseMove = (e:React.MouseEvent<SVGSVGElement>) => {
       if (isDragging) {
         setPan({
           x: e.clientX - dragStart.x,
@@ -96,7 +112,7 @@ export default function ImageArea({ pan, setPan, setScale, image, svgRef, polygo
       }
     };
 
-  const handleMouseUp = (e:any) => {
+  const handleMouseUp = (e:React.MouseEvent<SVGSVGElement>) => {
       if (isDragging) {
         setIsDragging(false);
         return;
@@ -112,7 +128,7 @@ export default function ImageArea({ pan, setPan, setScale, image, svgRef, polygo
         // Inverse calculations to map click to native pixel coordinates
         const x = Math.round((clientX - pan.x) / scale);
         const y = Math.round((clientY - pan.y) / scale);
-        //@ts-expect-error
+
         setCurrentPoints((prevPoints) => [...prevPoints, { x, y }]);
       }
     };
@@ -128,7 +144,7 @@ export default function ImageArea({ pan, setPan, setScale, image, svgRef, polygo
                       onMouseMove={handleMouseMove}
                       onMouseUp={handleMouseUp}
                       onContextMenu={(e) => e.preventDefault()} // Block browser context menu for panning
-                      style={{ cursor: toolMode === 'pan' ? (isDragging ? 'grabbing' : 'grab') : 'crosshair' }}
+                      style={{ cursor: toolMode === 'pan' ? (isDragging ? 'grabbing' : 'grab') : toolMode === 'select' ? 'default' : 'crosshair' }}
                     >
                       {/* Inner group with calculated CSS translate and scale matrix */}
                       <g transform={`translate(${pan.x}, ${pan.y}) scale(${scale})`}>
@@ -138,18 +154,20 @@ export default function ImageArea({ pan, setPan, setScale, image, svgRef, polygo
 
                         {/* Render Saved Polygons */}
                         {polygons.map((poly) => (
-                          <g key={poly.id}>
+                          <g key={poly.id} style={{ cursor: toolMode === "select" ? 'pointer' : 'inherit' }}>
                             <polygon
-                              //@ts-expect-error
+                            onClick={() => toolMode === 'select' ? setActivePoly(poly.id) : ''}
+                            className="pointer-events-auto polygon-overlay"
                               points={formatPoints(poly.points)}
-                              fill="rgba(59, 130, 246, 0.35)"
-                              stroke="#2563eb"
+                              fill={poly.color}
+                              fillOpacity="20%"
+                              stroke={poly.color}
                               strokeWidth={Math.max(1, 2 / scale)} // Dynamic stroke width so lines don't get super thick when zoomed in
                             />
                             <text
                               x={poly.points[0].x}
                               y={poly.points[0].y - 8 / scale}
-                              fill="#93c5fd"
+                              fill={poly.color}
                               fontSize={Math.max(10, 12 / scale)}
                               className="font-bold drop-shadow-md select-none pointer-events-none"
                             >
@@ -161,7 +179,6 @@ export default function ImageArea({ pan, setPan, setScale, image, svgRef, polygo
                         {/* Render Current In-Progress Lines */}
                         {currentPoints.length > 0 && (
                 <polyline
-                  //@ts-expect-error
                             points={formatPoints(currentPoints)}
                             fill="none"
                             stroke="#ef4444"
@@ -186,12 +203,12 @@ export default function ImageArea({ pan, setPan, setScale, image, svgRef, polygo
                     </svg>
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10">
-                      <div className="max-w-md bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl">
+                      <div className="max-w-md bg-[#1b1b1c] border border-[#1b1b1c] p-8 rounded-2xl shadow-2xl">
                         <h1 className="text-2xl font-black mb-3 text-white tracking-wide">Image Polygon Annotator</h1>
                         <p className="text-gray-400 text-sm mb-6 leading-relaxed">
                           Upload any high-res image. Drag to pan, scroll wheel to zoom, and click to draw pixel-perfect polygons.
                         </p>
-                        <label className="block w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg cursor-pointer transition-colors shadow-lg">
+                        <label className="block w-full bg-[#4ae176] hover:opacity-90 text-[#003915] font-bold py-3 px-6 rounded-lg cursor-pointer transition-colors shadow-lg">
                           Choose Image
                           <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                         </label>

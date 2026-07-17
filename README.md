@@ -1,32 +1,63 @@
-# React + TypeScript + Vite
+# 📍 Image Polygon Tracer
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+An interactive, 100% client-side web application to load local images, trace custom polygons, name them, and export the resulting data into multiple formats: **CSS Clip-Path**, **SVG Tag**, and **JSON coordinates**.
 
-Currently, two official plugins are available:
+Live Demo: [https://ladkan.github.io/polygon-tracer/](https://ladkan.github.io/polygon-tracer/)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+![Project Preview](https://i.postimg.cc/WpFbY77p/obrazek.png)
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ✨ Features
 
-## Expanding the Oxlint configuration
+- **🔒 100% Private & Client-Side:** Your images never leave your computer. All processing, rendering, and calculation happen directly in your browser.
+- **🗺️ Interactive Polygon Tracing:** Click anywhere on the loaded image to place anchor points and draw perfect shapes.
+- **🏷️ Name Your Shapes:** Organize your work by naming individual polygons.
+- **💾 Multi-Format Export:**
+  - **CSS Clip-Path:** Instantly copy-paste the `polygon(...)` rule for modern web layouts and image masking.
+  - **SVG Tag:** Copy raw `<polygon>` tags ready to be embedded in HTML.
+  - **JSON Object:** Download or copy a structured coordinate mapping (ideal for data scientists, developers, and ML image annotation).
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+---
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+## 🛠️ Tech Stack
+
+- **Framework:** React + TypeScript
+- **Bundler:** Vite
+- **Styling:** CSS / Tailwind CSS (adjust if you use another styling tool)
+- **Icons:** Google Material Symbols
+
+---
+
+## 🚀 Getting Started
+
+To run this project locally, follow these simple steps:
+
+### Prerequisites
+
+Ensure you have [Node.js](https://nodejs.org/) (v18 or higher recommended) and `pnpm` installed.
+
+### Installation & Setup
+
+1. **Clone the repository:**
+```bash
+   git clone [https://github.com/ladkan/polygon-tracer.git](https://github.com/ladkan/polygon-tracer.git)
+   cd polygon-tracer
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+2. **Install dependencies:**
+```bash
+ pnpm install
+```
+
+3. **Start the development server:**
+```bash
+ pnpm run dev
+```
+
+Open `http://localhost:5173` in your browser to see the app running.
+
+4. **Build for production:**
+```bash
+ pnpm run build
+```
