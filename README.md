@@ -24,7 +24,7 @@ Live Demo: [https://ladkan.github.io/polygon-tracer/](https://ladkan.github.io/p
 
 - **Framework:** React + TypeScript
 - **Bundler:** Vite
-- **Styling:** CSS / Tailwind CSS (adjust if you use another styling tool)
+- **Styling:** CSS / Tailwind CSS
 - **Icons:** Google Material Symbols
 
 ---

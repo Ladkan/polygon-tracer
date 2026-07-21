@@ -1,121 +1,72 @@
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import ImageArea from "./components/ImageArea";
 import ToolBar from "./components/ToolBar";
 import SavedPolygons from "./components/SavedPolygons";
-import { getRandomHexColor } from "./utils";
-import { type Point2D, type Polygon } from "./types/polygon.t"
+import { type Point2D } from "./types/polygon.t"
 import EditPolygon from "./components/EditPolygon";
+import { usePolygonTracer } from "./Context/PolygonContext";
+import Modal from "./components/Modal";
 
 export default function App() {
-  const [image, setImage] = useState(null);
-  const [polygons, setPolygons] = useState<Polygon[]>([]);
-  const [currentPoints, setCurrentPoints] = useState<Point2D[]>([]);
-  const [polyName, setPolyName] = useState("Polygon 1");
 
-  // Track the original, natural dimensions of the uploaded image
-  const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
+  const [modalState, setModalState] = useState<boolean>(false)
 
-      const [toolMode, setToolMode] = useState('draw'); // 'draw' or 'pan' or 'select'
-  const [scale, setScale] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const {
+    naturalSize,
+    polygons,
+    activePolygonData,
+    loadImage,
+    addPolygon,
+    setViewport,
+    image
+  } = usePolygonTracer()
 
   const svgRef = useRef(null);
 
-  const [activePoly, setActivePoly] = useState<number>();
-
   // Handle image upload and measure original dimensions
-  const handleImageUpload = (e:any) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = new Image();
-          img.onload = () => {
-            setNaturalSize({ width: img.width, height: img.height });
-            //@ts-expect-error
-            setImage(event.target.result);
-            setPolygons([]);
-            setCurrentPoints([]);
+  const handleImageUpload = (e: any) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
 
-            // Center and scale image to fit screen
-            const vWidth = window.innerWidth;
-            const vHeight = window.innerHeight;
-            const scaleX = (vWidth * 0.8) / img.width;
-            const scaleY = (vHeight * 0.8) / img.height;
-            const initialScale = Math.min(scaleX, scaleY, 1);
+          // Center and scale image to fit screen
+          const vWidth = window.innerWidth;
+          const vHeight = window.innerHeight;
+          const scaleX = (vWidth * 0.8) / img.width;
+          const scaleY = (vHeight * 0.8) / img.height;
+          const initialScale = Math.min(scaleX, scaleY, 1);
 
-            setScale(initialScale);
-            setPan({
-              x: (vWidth - img.width * initialScale) / 2,
-              y: (vHeight - img.height * initialScale) / 2
-            });
-          };
-          //@ts-expect-error
-          img.src = event.target.result;
+          loadImage(
+            event.target?.result as string,
+            { width: img.width, height: img.height },
+            {
+              scale: initialScale,
+              pan: {
+                x: (vWidth - img.width * initialScale) / 2,
+                y: (vHeight - img.height * initialScale) / 2,
+              }
+            }
+          )
+
         };
-        reader.readAsDataURL(file);
-      }
-    };
-
-  // Save the current polygon
-  const savePolygon = () => {
-    if (currentPoints.length < 3) {
-      alert("A polygon needs at least 3 points.");
-      return;
+        img.src = event.target?.result as string;
+      };
+      reader.readAsDataURL(file);
     }
-    setPolygons([
-      ...polygons,
-      { id: Date.now(), name: polyName, points: currentPoints, color: getRandomHexColor() },
-    ]);
-    setCurrentPoints([]);
-    setPolyName(`Polygon ${polygons.length + 2}`);
   };
 
-// Remove polygon
+  const createPolygon = () => {
 
-  const handleRemovePolygon = (id: number) => {
-    setPolygons((prev) => prev.filter((poly) => poly.id !== id))
+    if (!image) {
+      alert("Select image first")
+      return
+    }
+
+    addPolygon(`Polygon ${polygons.length + 1}`)
   }
-
-  // --- Export Utilities ---
-
-  // 1. Export as JSON Points
-  const copyJSON = async (points: Point2D[]) => {
-    const jsonStr = JSON.stringify(points, null, 2);
-    await copyText(jsonStr, "JSON coordinates");
-  };
-
-  // 2. Export as Responsive CSS clip-path
-  const copyCSSClipPath = async (points: Point2D[], name: string) => {
-    if (!naturalSize.width || !naturalSize.height) return;
-    const pathStr = points
-      .map((p:Point2D) => {
-        const xPercent = ((p.x / naturalSize.width) * 100).toFixed(1);
-        const yPercent = ((p.y / naturalSize.height) * 100).toFixed(1);
-        return `${xPercent}% ${yPercent}%`;
-      })
-      .join(", ");
-
-    const cssString = `clip-path: polygon(${pathStr}); //${name}`;
-    await copyText(cssString, "CSS clip-path");
-  };
-
-  // 3. Export as pure SVG <polygon> element tag
-  const copySVGTag = async (points:Point2D[], name: string) => {
-    const pointsStr = points.map((p:Point2D) => `${p.x},${p.y}`).join(" ");
-    const svgString = `<polygon points="${pointsStr}" fill="rgba(59, 130, 246, 0.4)" stroke="#2563eb" stroke-width="2" /> //${name}`;
-    await copyText(svgString, "SVG polygon element");
-  };
-
-  // Generic Clipboard helper
-  const copyText = async (text:string, label:string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      alert(`${label} copied to clipboard!`);
-    } catch (err) {
-      console.error("Failed to copy text: ", err);
-    }
-  };
 
   const formatPoints = (points:Point2D[]) => points.map((p:Point2D) => `${p.x},${p.y}`).join(" ");
 
@@ -125,75 +76,110 @@ export default function App() {
       const scaleX = (vWidth * 0.8) / naturalSize.width;
       const scaleY = (vHeight * 0.8) / naturalSize.height;
       const initialScale = Math.min(scaleX, scaleY, 1);
-      setScale(initialScale);
-      setPan({
+    setViewport({
+      scale: initialScale,
+      pan: {
         x: (vWidth - naturalSize.width * initialScale) / 2,
-        y: (vHeight - naturalSize.height * initialScale) / 2
-      });
+        y: (vHeight - naturalSize.height * initialScale) / 2,
+      }
+      })
     };
-
-  const activePolygonData = polygons.find((poly: Polygon) => poly.id === activePoly);
-
-  const updatePolygon = (updatedPoly: Polygon) => {
-    setPolygons((prev) =>
-      prev.map((poly: any) =>
-        poly.id === updatedPoly.id ? updatedPoly : poly
-      )
-    );
-  };
 
   return (
     <>
       <div className="absolute">
         <div className="flex gap-4">
           <SavedPolygons
-            activePoly={activePoly}
-            setActivePoly={setActivePoly}
-            currentPoints={currentPoints}
-            polyName={polyName}
-            savePolygon={savePolygon}
-            setCurrentPoints={setCurrentPoints}
-            setPolyName={setPolyName}
-            deletePolygon={handleRemovePolygon}
-            handleImageUpload={handleImageUpload}
-            polygons={polygons} />
+            createPolygon={createPolygon}
+            handleImageUpload={handleImageUpload} />
           <ToolBar
             resetViewport={resetViewport}
-            scale={scale}
-            setToolMode={setToolMode}
-            toolMode={toolMode} />
+            setModal={setModalState}
+          />
         </div>
       </div>
       <div className="absolute right-0 z-40">
         {activePolygonData && (
-          <EditPolygon
-            activePolygonData={activePolygonData}
-            copyCSSClipPath={copyCSSClipPath}
-            copyJSON={copyJSON}
-            copySVGTag={copySVGTag}
-            setActivePoly={setActivePoly}
-            updatePolygon={updatePolygon}
-            handleRemovePolygon={handleRemovePolygon}
-          />
+          <EditPolygon />
         )}
       </div>
       <ImageArea
-        pan={pan}
-        setPan={setPan}
-        setScale={setScale}
-        scale={scale}
-        setToolMode={setToolMode}
-        toolMode={toolMode}
-        image={image}
-        polygons={polygons}
         svgRef={svgRef}
         handleImageUpload={handleImageUpload}
-        setCurrentPoints={setCurrentPoints}
-        currentPoints={currentPoints}
         formatPoints={formatPoints}
-        naturalSize={naturalSize}
-        setActivePoly={setActivePoly}
       />
+      <Modal isOpen={modalState} setState={setModalState} >
+        <div className="space-y-6 text-[#c1c6d7]">
+          <h2 className="text-xl font-bold text-white border-b border-[#414755] pb-2 flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#4ae176]">tune</span>
+            Polygon Controls Guide
+          </h2>
+          <section className="space-y-3">
+                <h3 className="text-sm font-semibold text-[#4ae176] uppercase tracking-wider flex items-center gap-2">
+                  <span className="material-symbols-outlined text-sm">keyboard</span>
+                  Quick Mode Switching
+                </h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="bg-[#2a2a2a] p-2.5 rounded-lg border border-[#414755] flex items-center justify-between">
+                    <span className="text-white">Select mode</span>
+                    <kbd className="bg-[#393939] text-white px-2 py-0.5 rounded text-xs border border-[#414755]">V</kbd>
+                  </div>
+                  <div className="bg-[#2a2a2a] p-2.5 rounded-lg border border-[#414755] flex items-center justify-between">
+                    <span className="text-white">Draw mode</span>
+                    <kbd className="bg-[#393939] text-white px-2 py-0.5 rounded text-xs border border-[#414755]">P / D</kbd>
+                  </div>
+                </div>
+              </section>
+          <section className="space-y-3">
+            <h3 className="text-md font-semibold text-white flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm">adjust</span>
+              Point Operations
+            </h3>
+            <ul className="space-y-2 text-sm pl-2">
+              <li className="flex items-start gap-2">
+                <span className="text-[#4ae176] font-bold">•</span>
+                <span>
+                  <strong className="text-white">Delete a Point:</strong> Hover over a point in <span className="bg-[#393939] px-1.5 py-0.5 rounded text-xs text-white">Draw</span> or <span className="bg-[#393939] px-1.5 py-0.5 rounded text-xs text-white">Select</span> mode and press <kbd className="bg-[#393939] text-white px-2 py-0.5 rounded text-xs border border-[#414755]">Delete</kbd>.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#4ae176] font-bold">•</span>
+                <span>
+                  <strong className="text-white">Move a Point:</strong> Hover over a point in <span className="bg-[#393939] px-1.5 py-0.5 rounded text-xs text-white">Draw</span> or <span className="bg-[#393939] px-1.5 py-0.5 rounded text-xs text-white">Select</span> mode, then <strong className="text-white">right-click and drag</strong> it.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#4ae176] font-bold">•</span>
+                <span>
+                  <strong className="text-white">Add a Point:</strong> Switch to <span className="bg-[#393939] px-1.5 py-0.5 rounded text-xs text-white">Select</span> mode and <strong className="text-white">right-click on any line segment</strong> (finished or in-progress).
+                </span>
+              </li>
+            </ul>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-md font-semibold text-white flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm">polyline</span>
+              Polygon Operations
+            </h3>
+            <ul className="space-y-2 text-sm pl-2">
+              <li className="flex items-start gap-2">
+                <span className="text-[#4ae176] font-bold">•</span>
+                <span>
+                  <strong className="text-white">Close a Polygon:</strong> Click near the <strong className="text-white">first point</strong> of your path while drawing.
+                </span>
+              </li>
+            </ul>
+          </section>
+
+          <div className="bg-[#2a2a2a] border border-[#414755] p-3 rounded-lg flex items-center gap-3 text-xs">
+            <span className="material-symbols-outlined text-[#4ae176]">lightbulb</span>
+            <span>
+              <strong className="text-white">Pro-Tip:</strong> Hold <kbd className="bg-[#393939] text-white px-1.5 py-0.5 rounded border border-[#414755]">Spacebar</kbd> at any time to temporarily switch to Pan mode.
+            </span>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }

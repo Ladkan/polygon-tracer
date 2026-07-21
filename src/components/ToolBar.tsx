@@ -1,16 +1,17 @@
+import { usePolygonTracer } from "../Context/PolygonContext";
+
 interface ToolBarProps {
-  toolMode: any;
-  setToolMode: (e: any) => void;
   resetViewport: (e: any) => void;
-  scale: any;
+  setModal: (e: boolean) => void;
 }
 
 export default function ToolBar({
-  setToolMode,
-  toolMode,
   resetViewport,
-  scale,
+  setModal
 }: ToolBarProps) {
+
+  const { toolMode, setToolMode, viewport } = usePolygonTracer()
+
   return (
     <div className="my-4 h-fit flex flex-col items-center gap-1 bg-[#2a2a2a] backdrop-blur-md p-1 border border-[#414755] shadow-lg rounded-lg z-20">
       <button
@@ -51,7 +52,14 @@ export default function ToolBar({
         title="Reset Viewport"
         className="w-10 h-10 flex items-center justify-center rounded text-[#c1c6d7] hover:bg-[#393939] cursor-pointer"
       >
-        ({Math.round(scale * 100)}%)
+        ({Math.round(viewport.scale * 100)}%)
+      </button>
+      <button
+        title="Info"
+        onClick={() => setModal(true)}
+        className="w-10 h-10 flex items-center justify-center rounded text-[#c1c6d7] hover:bg-[#393939] cursor-pointer"
+      >
+        <span className="material-symbols-outlined">info</span>
       </button>
     </div>
   );
