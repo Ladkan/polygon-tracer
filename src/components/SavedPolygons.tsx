@@ -41,7 +41,7 @@ export default function SavedPolygons({handleImageUpload,createPolygon}: SavedPo
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full" style={{backgroundColor: poly.color}}></div>
                     <div>
-                      <p className="text-[#e5e2e1]">{poly.name} {poly.closed ? <span className="material-symbols-outlined text-[18px !inportarnt]">lock</span> : ''}</p>
+                      <p className="text-[#e5e2e1]">{poly.name} {poly.closed ? <span  style={{ fontSize: "16px" }} className="material-symbols-outlined">lock</span> : ''}</p>
                       <p className="font-normal leading-4 text-[12px] text-[#c1c6d7]">{poly.points.length} Points</p>
                     </div>
                   </div>

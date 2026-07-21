@@ -113,7 +113,7 @@ export default function ImageArea({ svgRef,handleImageUpload, formatPoints }: Im
       if (e.code === "Delete") {
         e.preventDefault()
         if (currentToolRef.current === "draw" || currentToolRef.current === "select") {
-
+          //@ts-ignore
           const nextPoints = activePolygonData.points.filter((p, i) => i !== hover.pointIndex)
 
           const shouldOpen = nextPoints.length < 3 && activePolygonData.closed
