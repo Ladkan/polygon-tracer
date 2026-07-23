@@ -38,6 +38,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Test application
+        run: pnpm vitest run
+
       - name: Build application
         run: pnpm build
 

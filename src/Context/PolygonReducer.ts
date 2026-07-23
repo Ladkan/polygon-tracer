@@ -1,4 +1,4 @@
-import type { Point2D, Polygon } from "../types/polygon.t";
+import type { Point2D, Polygon } from "../types/polygon";
 import { getRandomHexColor } from "../utils";
 
 export type ToolMode = "select" | "draw" | "pan";

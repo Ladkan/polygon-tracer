@@ -30,7 +30,10 @@ export default function SavedPolygons({handleImageUpload,createPolygon}: SavedPo
           ): (
               polygons.map((poly) => (
                 <div
-                  onClick={() => selectPolygon(poly.id)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    selectPolygon(poly.id)
+                  }}
                   key={poly.id}
                   className="px-3 py-2 border-l-4 flex items-center justify-between group cursor-pointer"
                   style={{
@@ -45,7 +48,10 @@ export default function SavedPolygons({handleImageUpload,createPolygon}: SavedPo
                       <p className="font-normal leading-4 text-[12px] text-[#c1c6d7]">{poly.points.length} Points</p>
                     </div>
                   </div>
-                  <button onClick={() => removePolygon(poly.id)} className="flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 text-[#c1c6d7] p-1 hover:bg-[#93000a] hover:text-[#ffdad6] rounded transition-all">
+                  <button onClick={(e) => {
+                    e.stopPropagation()
+                    removePolygon(poly.id)
+                  }} className="flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 text-[#c1c6d7] p-1 hover:bg-[#93000a] hover:text-[#ffdad6] rounded transition-all">
                   <span className="material-symbols-outlined text-[18px]">delete</span>
                   </button>
               </div>

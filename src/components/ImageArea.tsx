@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import type { Point2D, Polygon, PolyIdIdx } from "../types/polygon.t";
+import type { Point2D, Polygon, PolyIdIdx } from "../types/polygon";
 import { distanceToSegment, getPoint, isInputFocused } from "../utils";
 import { usePolygonTracer } from "../Context/PolygonContext";
 import type { ToolMode } from "../Context/PolygonReducer";

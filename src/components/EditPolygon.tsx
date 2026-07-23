@@ -1,5 +1,5 @@
 import { usePolygonTracer } from "../Context/PolygonContext";
-import type { Point2D } from "../types/polygon.t";
+import type { Point2D } from "../types/polygon";
 import { copyCSSClipPath, copyJSON, copySVGTag } from "../utils";
 
 export default function EditPolygon() {

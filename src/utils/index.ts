@@ -1,4 +1,4 @@
-import type { Point2D } from "../types/polygon.t";
+import type { Point2D } from "../types/polygon";
 
 export const getRandomHexColor = (): string => {
   const randomHex = Math.floor(Math.random() * 16777215).toString(16);

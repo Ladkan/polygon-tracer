@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useReducer } from "react";
-import type { Polygon } from "../types/polygon.t";
+import type { Polygon } from "../types/polygon";
 import { initialState, polygonTracerReducer, type PolygonTracerAction, type PolygonTracerState, type ToolMode, type Viewport } from "./PolygonReducer";
 
 interface PolygonTracerContextValue extends PolygonTracerState {

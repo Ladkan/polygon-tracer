@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import ImageArea from "./components/ImageArea";
 import ToolBar from "./components/ToolBar";
 import SavedPolygons from "./components/SavedPolygons";
-import { type Point2D } from "./types/polygon.t"
+import { type Point2D } from "./types/polygon"
 import EditPolygon from "./components/EditPolygon";
 import { usePolygonTracer } from "./Context/PolygonContext";
 import Modal from "./components/Modal";

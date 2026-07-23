@@ -8,10 +8,7 @@ interface ModalProps{
 
 export default function Modal({ children, isOpen, setState }: ModalProps) {
 
-  if(!isOpen) return null
-
   useEffect(() => {
-
     const handleClose = (e: KeyboardEvent) => {
       if (e.code === "Escape") {
         e.preventDefault()
@@ -24,10 +21,12 @@ export default function Modal({ children, isOpen, setState }: ModalProps) {
     window.addEventListener('keyup', handleClose)
 
     return () => {
-      window.addEventListener('keyup', handleClose)
+      window.removeEventListener('keyup', handleClose)
     }
 
   },[isOpen])
+
+  if(!isOpen) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
