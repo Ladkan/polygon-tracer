@@ -6,6 +6,7 @@ import { type Point2D } from "./types/polygon"
 import EditPolygon from "./components/EditPolygon";
 import { usePolygonTracer } from "./Context/PolygonContext";
 import Modal from "./components/Modal";
+import { useKeyPress } from "./utils";
 
 export default function App() {
 
@@ -18,8 +19,15 @@ export default function App() {
     loadImage,
     addPolygon,
     setViewport,
-    image
+    image,
+    copyPolygon
   } = usePolygonTracer()
+
+  useKeyPress("c", {
+    ctrlKey: true,
+    enabled: !!activePolygonData?.closed,
+    onDown: () => copyPolygon(`Polygon ${polygons.length + 1}`)
+  })
 
   const svgRef = useRef(null);
 
@@ -168,6 +176,18 @@ export default function App() {
                 <span>
                   <strong className="text-white">Close a Polygon:</strong> Click near the <strong className="text-white">first point</strong> of your path while drawing.
                 </span>
+              </li>
+              <li className="flex items-start gap-2">
+                        <span className="text-[#4ae176] font-bold">•</span>
+                        <span>
+                          <strong className="text-white">Move polygon:</strong> In <span className="bg-[#393939] px-1.5 py-0.5 rounded text-xs text-white">Select</span> mode we can <strong className="text-white">drag any closed polygon</strong>.
+                        </span>
+                      </li>
+              <li className="flex items-start gap-2">
+                    <span className="text-[#4ae176] font-bold">•</span>
+                    <span>
+                      <strong className="text-white">Copy Polygon:</strong> Press <kbd className="bg-[#393939] px-1.5 py-0.5 rounded text-xs text-white">Ctrl+C</kbd>
+                    </span>
               </li>
             </ul>
           </section>

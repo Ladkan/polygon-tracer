@@ -60,7 +60,7 @@ describe("polygonTracerReducer", () => {
 
   describe("ADD_POLYGON", () => {
     it("appends a polygon and makes it active", () => {
-      const state: PolygonTracerState = { ...initialState, polygons: [], activePoly: undefined };
+      const state: PolygonTracerState = { ...initialState, polygons: [], activePoly: null };
       const next = polygonTracerReducer(state, { type: "ADD_POLYGON", name: "Roof" });
 
       expect(next.polygons).toHaveLength(1);
@@ -131,7 +131,7 @@ describe("polygonTracerReducer", () => {
       };
       const next = polygonTracerReducer(state, { type: "REMOVE_POLYGON", id: 1 });
       expect(next.polygons).toHaveLength(0);
-      expect(next.activePoly).toBeUndefined();
+      expect(next.activePoly).toBeNull();
     });
 
     it("keeps activePoly untouched when removing a non-active polygon", () => {
@@ -155,12 +155,24 @@ describe("polygonTracerReducer", () => {
       expect(next.activePoly).toBe(42);
     });
 
-    it("allows clearing the selection with undefined", () => {
+    it("allows clearing the selection with null", () => {
       const state = { ...initialState, activePoly: 42 };
-      const next = polygonTracerReducer(state, { type: "SELECT_POLYGON", id: undefined });
-      expect(next.activePoly).toBeUndefined();
+      const next = polygonTracerReducer(state, { type: "SELECT_POLYGON", id: null });
+      expect(next.activePoly).toBeNull();
     });
   });
+
+  describe("COPY_POLYGON", () => {
+    it("creates a copy of selected polygon", () => {
+      const state: PolygonTracerState = {
+        ...initialState,
+        polygons: [{ id: 1, name: "A", closed: true, color: "#111", points: [{ x: 5, y: 5 },{ x: 10, y: 10 },{ x: 15, y: 15 }] }],
+        activePoly: 1,
+      };
+      const next = polygonTracerReducer(state, { type: "COPY_POLYGON", name: "B" })
+      expect(next.polygons).toHaveLength(2)
+    })
+  })
 
   describe("SET_TOOL_MODE / SET_VIEWPORT", () => {
     it("updates toolMode without touching other fields", () => {

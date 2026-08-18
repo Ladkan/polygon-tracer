@@ -1,4 +1,5 @@
-import React, { useEffect } from "react"
+import React from "react"
+import { useKeyPress } from "../utils";
 
 interface ModalProps{
   children: React.ReactNode;
@@ -8,23 +9,14 @@ interface ModalProps{
 
 export default function Modal({ children, isOpen, setState }: ModalProps) {
 
-  useEffect(() => {
-    const handleClose = (e: KeyboardEvent) => {
-      if (e.code === "Escape") {
-        e.preventDefault()
-
-        setState(!isOpen)
-
-      }
-    }
-
-    window.addEventListener('keyup', handleClose)
-
-    return () => {
-      window.removeEventListener('keyup', handleClose)
-    }
-
-  },[isOpen])
+  // Close modal
+  useKeyPress("Escape", {
+    onUp: (e: KeyboardEvent) => {
+      e.preventDefault()
+      setState(!isOpen)
+    },
+    enabled: !!isOpen,
+  })
 
   if(!isOpen) return null
 

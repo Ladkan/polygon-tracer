@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useRef } from "react";
 import type { Point2D } from "../types/polygon";
 
 export const getRandomHexColor = (): string => {
@@ -102,3 +103,64 @@ export const isInputFocused = () => {
       activeEl.isContentEditable
     )
   }
+
+//
+
+interface useKeyPressOptions {
+  onDown?: (e: KeyboardEvent) => void;
+  onUp?: (e: KeyboardEvent) => void;
+  enabled?: boolean;
+  ctrlKey?: boolean;
+  ignoreWhenInputFocused?: boolean;
+}
+
+export function useKeyPress(
+  keys: string | string[],
+  {
+    onDown,
+    onUp,
+    enabled = true,
+    ctrlKey = false,
+    ignoreWhenInputFocused = true,
+  }: useKeyPressOptions
+) {
+  const onDownRef = useRef(onDown)
+  const onUpRef = useRef(onUp)
+  onDownRef.current = onDown
+  onUpRef.current = onUp
+
+  const keyList = useMemo(
+    () => (Array.isArray(keys) ? keys : [keys]).map((k) => k.toLowerCase()),
+    [Array.isArray(keys) ? keys.join("|") : keys]
+  )
+
+  useEffect(() => {
+
+    if (!enabled) return
+
+    const isMatch = (e:KeyboardEvent) => keyList.includes(e.key.toLowerCase()) || keyList.includes(e.code.toLowerCase())
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (ignoreWhenInputFocused && isInputFocused()) return
+      if (ctrlKey && !e.ctrlKey) return
+      if (!isMatch(e)) return
+      onDownRef.current?.(e)
+    }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (ignoreWhenInputFocused && isInputFocused()) return;
+      if (!isMatch(e)) return;
+      onUpRef.current?.(e);
+    };
+
+    window.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("keyup", handleKeyUp)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("keyup", handleKeyUp)
+    }
+
+  }, [keyList, enabled, ctrlKey, ignoreWhenInputFocused])
+
+}

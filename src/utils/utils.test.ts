@@ -10,7 +10,9 @@ import {
   copySVGTag,
   getRandomHexColor,
   isInputFocused,
+  useKeyPress,
 } from "../utils";
+import { cleanup, renderHook } from "@testing-library/react";
 
 describe("getRandomHexColor", () => {
   it("always returns a 7-char #rrggbb string", () => {
@@ -167,4 +169,158 @@ describe("isInputFocused", () => {
     btn.focus();
     expect(isInputFocused()).toBeFalsy();
   });
+});
+
+describe("useKeyPress", () => {
+  afterEach(() => {
+    cleanup()
+    document.body.innerHTML = ""
+  })
+
+  function fireKeyDown(key: string, opts: Partial<KeyboardEventInit> = {}) {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, ...opts }))
+  }
+
+  function fireKeyUp(key: string, opts: Partial<KeyboardEventInit> = {}) {
+    window.dispatchEvent(new KeyboardEvent("keyup", { key, bubbles: true, ...opts }));
+  }
+
+  it("calls onDown when the matching key is pressed", () => {
+    const onDown = vi.fn()
+    renderHook(() => useKeyPress("v", { onDown }))
+    fireKeyDown("v")
+    expect(onDown).toHaveBeenCalledTimes(1)
+  })
+
+  it("is case-insentive when matching keys", () => {
+    const onDown = vi.fn()
+    renderHook(() => useKeyPress("v", { onDown }))
+    fireKeyDown("V")
+    expect(onDown).toHaveBeenCalledTimes(1)
+  })
+
+  it("does not call onDown for a non-matching key", () => {
+    const onDown = vi.fn()
+    renderHook(() => useKeyPress("v", { onDown }))
+    fireKeyDown("x")
+    expect(onDown).not.toHaveBeenCalled()
+  })
+
+  it("supports an array of keys", () => {
+      const onDown = vi.fn()
+      renderHook(() => useKeyPress(["p", "d"], { onDown }))
+      fireKeyDown("p")
+      fireKeyDown("d")
+      fireKeyDown("x")
+      expect(onDown).toHaveBeenCalledTimes(2)
+  })
+
+  it("matches named keys via e.code (e.g. space, delete)", () => {
+      const onDown = vi.fn();
+      renderHook(() => useKeyPress("space", { onDown }));
+
+      fireKeyDown(" ", { code: "Space" });
+
+      expect(onDown).toHaveBeenCalledTimes(1);
+    });
+
+    it("calls onUp when the matching key is released", () => {
+      const onUp = vi.fn();
+      renderHook(() => useKeyPress("delete", { onUp }));
+
+      fireKeyUp("Delete", { code: "Delete" });
+
+      expect(onUp).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not fire when enabled is false", () => {
+      const onDown = vi.fn();
+      renderHook(() => useKeyPress("v", { onDown, enabled: false }));
+
+      fireKeyDown("v");
+
+      expect(onDown).not.toHaveBeenCalled();
+    });
+
+    it("re-subscribes when enabled flips from false to true", () => {
+      const onDown = vi.fn();
+      const { rerender } = renderHook(
+        ({ enabled }) => useKeyPress("v", { onDown, enabled }),
+        { initialProps: { enabled: false } }
+      );
+
+      fireKeyDown("v");
+      expect(onDown).not.toHaveBeenCalled();
+
+      rerender({ enabled: true });
+      fireKeyDown("v");
+
+      expect(onDown).toHaveBeenCalledTimes(1);
+    });
+
+    it("requires ctrlKey when ctrlKey option is set", () => {
+      const onDown = vi.fn();
+      renderHook(() => useKeyPress("c", { onDown, ctrlKey: true }));
+
+      fireKeyDown("c"); // no ctrl
+      expect(onDown).not.toHaveBeenCalled();
+
+      fireKeyDown("c", { ctrlKey: true });
+      expect(onDown).toHaveBeenCalledTimes(1);
+    });
+
+    it("ignores keypresses while an input is focused by default", () => {
+      const input = document.createElement("input");
+      document.body.appendChild(input);
+      input.focus();
+
+      const onDown = vi.fn();
+      renderHook(() => useKeyPress("v", { onDown }));
+
+      fireKeyDown("v");
+
+      expect(onDown).not.toHaveBeenCalled();
+    });
+
+    it("still fires while an input is focused when ignoreWhenInputFocused is false", () => {
+      const input = document.createElement("input");
+      document.body.appendChild(input);
+      input.focus();
+
+      const onDown = vi.fn();
+      renderHook(() => useKeyPress("v", { onDown, ignoreWhenInputFocused: false }));
+
+      fireKeyDown("v");
+
+      expect(onDown).toHaveBeenCalledTimes(1);
+    });
+
+    it("always uses the latest onDown/onUp callbacks without re-subscribing", () => {
+      const calls: number[] = [];
+      const { rerender } = renderHook(
+        ({ value }) =>
+          useKeyPress("v", {
+            onDown: () => calls.push(value),
+          }),
+        { initialProps: { value: 1 } }
+      );
+
+      rerender({ value: 2 });
+      fireKeyDown("v");
+
+      // Should reflect the latest render's closure (2), not the first (1)
+      expect(calls).toEqual([2]);
+    });
+
+    it("removes event listeners on unmount", () => {
+      const onDown = vi.fn();
+      const { unmount } = renderHook(() => useKeyPress("v", { onDown }));
+
+      unmount();
+      fireKeyDown("v");
+
+      expect(onDown).not.toHaveBeenCalled();
+    });
+
+
 });

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { Point2D, Polygon, PolyIdIdx } from "../types/polygon";
-import { distanceToSegment, getPoint, isInputFocused } from "../utils";
+import { distanceToSegment, getPoint, useKeyPress } from "../utils";
 import { usePolygonTracer } from "../Context/PolygonContext";
 import type { ToolMode } from "../Context/PolygonReducer";
 
@@ -27,6 +27,59 @@ export default function ImageArea({ svgRef,handleImageUpload, formatPoints }: Im
   const [dragInfo, setDragInfo] = useState<PolyIdIdx | null>(null);
   const [hover, setHover] = useState<PolyIdIdx | null>(null);
 
+  const [polyDragInfo, setPolyDragInfo] = useState < {
+    polyId: number;
+    startPoint: Point2D;
+    originalPoints: Point2D[];
+  } | null>(null)
+
+  // Polygon drag
+  const handlePolygonMouseDown = (poly: Polygon) => (e: React.MouseEvent) => {
+    if (toolMode !== "select" || !poly.closed) return
+
+    e.stopPropagation()
+
+    if (!svgRef.current) return
+
+    selectPolygon(poly.id)
+    const point = getPoint(svgRef, e, scale, pan)
+    setPolyDragInfo({ polyId: poly.id, startPoint: point, originalPoints: poly.points })
+
+  }
+  useEffect(() => {
+    if (!polyDragInfo) return
+
+    const onMove = (e: any) => {
+      if (!svgRef.current) return
+      if (currentToolRef.current !== "select") return
+
+      const point = getPoint(svgRef, e, viewport.scale, viewport.pan)
+      const dx = point.x - polyDragInfo.startPoint.x
+      const dy = point.y - polyDragInfo.startPoint.y
+
+      const poly = polygons.find(p => p.id === polyDragInfo.polyId)
+      if (!poly) return
+
+      updatePolygon({
+        ...poly,
+        points: polyDragInfo.originalPoints.map(p => ({ x: p.x + dx, y: p.y + dy }))
+      })
+
+    }
+
+    const onUp = () => setPolyDragInfo(null)
+
+    window.addEventListener("mousemove", onMove)
+    window.addEventListener("mouseup", onUp)
+
+    return () => {
+      window.removeEventListener("mousemove", onMove)
+      window.removeEventListener("mouseup", onUp)
+    }
+
+  }, [polyDragInfo])
+
+  // Tool mode change effect
   useEffect(() => {
       currentToolRef.current = toolMode;
     }, [toolMode]);
@@ -41,49 +94,54 @@ export default function ImageArea({ svgRef,handleImageUpload, formatPoints }: Im
       };
     }, [image, viewport.scale, viewport.pan]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (isInputFocused()) return;
-
-      if (e.code === 'Space') {
-        e.preventDefault()
-
-        if (currentToolRef.current !== "pan") {
-          lastToolRef.current = currentToolRef.current
-          setToolMode("pan")
-        }
-        return;
+  // When holding space set tool mode to pan
+  useKeyPress("space", {
+    onDown: (e) => {
+      e.preventDefault()
+      if (currentToolRef.current !== "pan") {
+        lastToolRef.current = currentToolRef.current
+        setToolMode("pan")
       }
-
-      const key = e.key.toLowerCase();
-      if (e.code === "KeyV" || key === "v") {
-        setToolMode("select");
-      } else if (e.code === "KeyP" || key === "p" || e.code === "KeyD" || key === "d") {
-        setToolMode("draw");
+    },
+    onUp: () => {
+      if (lastToolRef.current !== null) {
+        setToolMode(lastToolRef.current)
+        lastToolRef.current = null
       }
-    };
+    }
+  })
 
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (isInputFocused()) return
+  // Set tool mode to select
+  useKeyPress("v", { onDown: () => setToolMode("select") })
+  // Set tool mode to draw
+  useKeyPress(["p", "d"], { onDown: () => setToolMode("draw") })
 
-      if (e.code === 'Space') {
-        if (lastToolRef.current !== null){
-          setToolMode(lastToolRef.current)
-          lastToolRef.current = null
-        }
-      }
-    };
+  // Delete hoverd point on active polygon
+  useKeyPress("delete", {
+    enabled: !!activePolygonData && hover?.polyId === activePolygonData.id,
+    onDown: (e) => {
+      e.preventDefault()
+      if (currentToolRef.current !== "draw" && currentToolRef.current !== "select") return
 
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('keyup', handleKeyUp)
-    };
-  }, [setToolMode]);
+      const nextPoints = activePolygonData!.points.filter((_,i) => i !== hover!.pointIndex)
+      const shouldOpen = nextPoints.length < 3 && activePolygonData!.closed
 
+      updatePolygon({
+        ...activePolygonData!,
+        points: nextPoints,
+        closed: shouldOpen ? false : activePolygonData!.closed
+      })
+    },
+    onUp: () => {
+      if (hover !== null) setHover(null)
+    }
+  })
+
+  // Drag point
   useEffect(() => {
     if (!dragInfo) return
+
+    if(dragInfo.polyId !== activePoly) return
 
     const onMove = (e: any) => {
       if (!svgRef.current) return;
@@ -104,41 +162,6 @@ export default function ImageArea({ svgRef,handleImageUpload, formatPoints }: Im
       window.removeEventListener("mouseup", onUp);
     };
   },[dragInfo])
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if(isInputFocused()) return
-      if(!activePolygonData) return
-      if (hover?.polyId !== activePolygonData?.id) return
-      if (e.code === "Delete") {
-        e.preventDefault()
-        if (currentToolRef.current === "draw" || currentToolRef.current === "select") {
-          //@ts-ignore
-          const nextPoints = activePolygonData.points.filter((p, i) => i !== hover.pointIndex)
-
-          const shouldOpen = nextPoints.length < 3 && activePolygonData.closed
-
-          updatePolygon({ ...activePolygonData, points: nextPoints, closed: shouldOpen ? false : activePolygonData.closed })
-        }
-      }
-    }
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if(!activePolygonData) return
-      if (hover?.polyId !== activePolygonData?.id) return
-      if (e.code === "Delete") {
-        if (hover !== null) {
-          setHover(null)
-        }
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, [hover, activePolygonData])
 
   const handleWheel = (e:any) => {
       if (!image || !svgRef.current) return;
@@ -289,7 +312,8 @@ export default function ImageArea({ svgRef,handleImageUpload, formatPoints }: Im
                 return (
                   <g key={poly.id} style={{ cursor: toolMode === "select" ? 'pointer' : 'inherit' }}>
                     <Component
-                          onClick={() => toolMode === 'select' ? selectPolygon(poly.id) : ''}
+                      onClick={() => toolMode === 'select' ? selectPolygon(poly.id) : ''}
+                      onMouseDown={handlePolygonMouseDown(poly)}
                           className="pointer-events-auto polygon-overlay"
                           points={formatPoints(poly.points)}
                           fill={poly.closed ? `${poly.color}` : "none"}

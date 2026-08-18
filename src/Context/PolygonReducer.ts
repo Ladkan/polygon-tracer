@@ -12,7 +12,7 @@ export interface PolygonTracerState {
   image: string | null;
   naturalSize: { width: number; height: number };
   polygons: Polygon[];
-  activePoly: number | undefined;
+  activePoly: number | null;
   toolMode: ToolMode;
   viewport: Viewport;
 }
@@ -21,7 +21,7 @@ export const initialState: PolygonTracerState = {
   image: null,
   naturalSize: { width: 0, height: 0 },
   polygons: [],
-  activePoly: undefined,
+  activePoly: null,
   toolMode: "draw",
   viewport: { scale: 1, pan: { x: 0, y: 0 } },
 };
@@ -36,9 +36,10 @@ export type PolygonTracerAction =
   | { type: "ADD_POLYGON"; name: string }
   | { type: "UPDATE_POLYGON"; polygon: Polygon }
   | { type: "REMOVE_POLYGON"; id: number }
-  | { type: "SELECT_POLYGON"; id: number | undefined }
+  | { type: "SELECT_POLYGON"; id: number | null }
   | { type: "SET_TOOL_MODE"; toolMode: ToolMode }
-  | { type: "SET_VIEWPORT"; viewport: Viewport };
+  | { type: "SET_VIEWPORT"; viewport: Viewport }
+  | { type: "COPY_POLYGON"; name: string};
 
 let idSeed = Date.now();
 function nextPolygonId(): number {
@@ -54,6 +55,17 @@ function makePolygon(name: string): Polygon {
     color: getRandomHexColor(),
     points: [] as Point2D[],
   } as Polygon;
+}
+
+function copyPolygon(activePoly: Polygon[], name: string): Polygon {
+
+  return {
+    id: nextPolygonId(),
+    name,
+    closed: true,
+    color: activePoly[0].color,
+    points: [...activePoly[0].points],
+  } as Polygon
 }
 
 export function polygonTracerReducer(
@@ -92,12 +104,23 @@ export function polygonTracerReducer(
         ),
       };
 
+    case "COPY_POLYGON":
+      const poly = copyPolygon(state.polygons.filter((p) => p.id === state.activePoly), action.name)
+
+      if(!poly) return state
+
+      return {
+        ...state,
+        polygons: [...state.polygons, poly],
+        activePoly: poly.id,
+      };
+
     case "REMOVE_POLYGON":
       return {
         ...state,
         polygons: state.polygons.filter((p) => p.id !== action.id),
         activePoly:
-          state.activePoly === action.id ? undefined : state.activePoly,
+          state.activePoly === action.id ? null : state.activePoly,
       };
 
     case "SELECT_POLYGON":

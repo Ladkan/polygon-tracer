@@ -14,9 +14,10 @@ interface PolygonTracerContextValue extends PolygonTracerState {
   addPolygon: (name: string) => void;
   updatePolygon: (polygon: Polygon) => void;
   removePolygon: (id: number) => void;
-  selectPolygon: (id: number | undefined) => void;
+  selectPolygon: (id: number | null) => void;
   setToolMode: (mode: ToolMode) => void;
   setViewport: (viewport: Viewport) => void;
+  copyPolygon: (name: string) => void;
 }
 
 const PolygonTracerContext = createContext<PolygonTracerContextValue | null>(null)
@@ -51,7 +52,7 @@ export function PolygonTracerProvider({
     []
   );
   const selectPolygon = useCallback(
-    (id: number | undefined) => dispatch({ type: "SELECT_POLYGON", id }),
+    (id: number | null) => dispatch({ type: "SELECT_POLYGON", id }),
     []
   );
   const setToolMode = useCallback(
@@ -62,6 +63,11 @@ export function PolygonTracerProvider({
     (viewport: Viewport) => dispatch({ type: "SET_VIEWPORT", viewport }),
     []
   );
+
+  const copyPolygon = useCallback(
+    (name: string) => dispatch({ type: "COPY_POLYGON", name }),
+    []
+  )
 
   const value = useMemo<PolygonTracerContextValue>(
     () => ({
@@ -74,7 +80,8 @@ export function PolygonTracerProvider({
       removePolygon,
       selectPolygon,
       setToolMode,
-      setViewport
+      setViewport,
+      copyPolygon
     }),
     [
       state,
@@ -85,7 +92,8 @@ export function PolygonTracerProvider({
       removePolygon,
       selectPolygon,
       setToolMode,
-      setViewport
+      setViewport,
+      copyPolygon
     ]
   );
 
