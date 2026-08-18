@@ -13,7 +13,7 @@ export default function EditPolygon() {
 
       <div className="absolute top-0 right-0 p-3">
         <button
-          onClick={() => selectPolygon(undefined)}
+          onClick={() => selectPolygon(null)}
           className="text-[#c1c6d7] cursor-pointer hover:text-[#4ae176] transition-colors"
         >
           <span className="material-symbols-outlined text-[18px]">close</span>

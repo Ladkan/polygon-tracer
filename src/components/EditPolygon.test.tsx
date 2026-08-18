@@ -13,7 +13,7 @@ type Ctx = ReturnType<typeof usePolygonTracer>;
 describe("EditPolygon", () => {
   it("renders nothing when no polygon is selected", () => {
     const { container } = renderWithProvider(<EditPolygon />);
-    // Component returns `undefined` when there's no activePolygonData;
+    // Component returns `null` when there's no activePolygonData;
     // regression guard so the panel never renders an empty shell instead.
     expect(container).toBeEmptyDOMElement();
   });
@@ -66,6 +66,6 @@ describe("EditPolygon", () => {
     // Read via the live ref (post-click render), not a stale mount-time
     // snapshot: the polygon itself should still exist, just unselected.
     expect(ctxRef.current!.polygons).toHaveLength(1);
-    expect(ctxRef.current!.activePoly).toBeUndefined();
+    expect(ctxRef.current!.activePoly).toBeNull();
   });
 });
